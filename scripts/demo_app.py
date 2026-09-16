@@ -616,7 +616,7 @@ with tab_national:
 
         m = folium.Map(
             location=[15.9, 107.6], zoom_start=6,
-            tiles="cartodbpositron", control_scale=True,
+            tiles="OpenStreetMap", control_scale=True,
             min_zoom=5, max_zoom=10,
         )
 
@@ -799,7 +799,7 @@ with tab_map:
 
         m = folium.Map(
             location=[subset["vi_do"].mean(), subset["kinh_do"].mean()],
-            zoom_start=12, tiles="CartoDB positron", control_scale=True,
+            zoom_start=12, tiles="OpenStreetMap", control_scale=True,
         )
         heat_data = [[r["vi_do"], r["kinh_do"], r["chi_so_uu_tien"]]
                        for _, r in subset.iterrows()]
