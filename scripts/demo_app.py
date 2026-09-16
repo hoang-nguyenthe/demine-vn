@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""DeMine-VN — Bảng điều khiển hỗ trợ ưu tiên rà phá bom mìn.
+"""DeMine-VN — Hệ thống hỗ trợ xếp thứ tự ưu tiên rà phá bom mìn toàn quốc.
 
 Chạy: streamlit run scripts/demo_app.py
 """
@@ -18,14 +18,14 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
 st.set_page_config(
-    page_title="DeMine-VN — Bản đồ ưu tiên rà phá",
+    page_title="DeMine-VN — Bản đồ rà phá bom mìn Việt Nam",
     page_icon="◈",
     layout="wide",
     initial_sidebar_state="expanded",
 )
 
 # ============================================================================
-# APPLE.COM PALETTE
+# APPLE PALETTE + ANIMATIONS
 # ============================================================================
 COL_INK       = "#1D1D1F"
 COL_MUTED     = "#6E6E73"
@@ -35,23 +35,62 @@ COL_CARD      = "#FFFFFF"
 COL_HAIRLINE  = "#E5E5EA"
 COL_BORDER    = "#D2D2D7"
 
-# Bảng màu ngữ nghĩa
-COL_HIGH      = "#B62A2A"   # nguy cơ cao
-COL_MED       = "#B7791F"   # nguy cơ trung
-COL_LOW       = "#2C7A7B"   # đã rà phá / an toàn tương đối
-COL_CLEARED   = "#5B7F5A"
-COL_ACCENT    = "#0071E3"   # Apple blue
+COL_HIGH      = "#B62A2A"
+COL_MEDHIGH   = "#D26B36"
+COL_MED       = "#D4A017"
+COL_LOWMED    = "#7A9E5F"
+COL_LOW       = "#2C7A7B"
+COL_ACCENT    = "#0071E3"
 
 CSS = f"""
 <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
     html, body, [class*="css"] {{
         font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display",
-                     "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+                     "SF Pro Text", "Inter", "Helvetica Neue", Arial, sans-serif;
         -webkit-font-smoothing: antialiased;
     }}
     .stApp {{ background: {COL_BG}; color: {COL_INK}; }}
-    .main .block-container {{ padding-top: 2rem; max-width: 1240px; }}
+    .main .block-container {{ padding-top: 1.5rem; max-width: 1280px; }}
 
+    /* ========== ANIMATIONS ========== */
+    @keyframes fadeInUp {{
+        from {{ opacity: 0; transform: translate3d(0, 24px, 0); }}
+        to   {{ opacity: 1; transform: translate3d(0, 0, 0); }}
+    }}
+    @keyframes fadeIn {{
+        from {{ opacity: 0; }}
+        to   {{ opacity: 1; }}
+    }}
+    @keyframes scaleIn {{
+        from {{ opacity: 0; transform: scale(0.96); }}
+        to   {{ opacity: 1; transform: scale(1); }}
+    }}
+    @keyframes pulse {{
+        0%,100% {{ opacity: 1; }}
+        50% {{ opacity: 0.55; }}
+    }}
+    @keyframes shimmer {{
+        0%   {{ background-position: -200% 0; }}
+        100% {{ background-position: 200% 0; }}
+    }}
+    @keyframes countUp {{
+        from {{ opacity: 0; transform: translateY(8px); }}
+        to   {{ opacity: 1; transform: translateY(0); }}
+    }}
+
+    .fade-in-up  {{ animation: fadeInUp 0.8s cubic-bezier(0.22, 1, 0.36, 1) both; }}
+    .fade-in     {{ animation: fadeIn 1.2s cubic-bezier(0.22, 1, 0.36, 1) both; }}
+    .scale-in    {{ animation: scaleIn 0.7s cubic-bezier(0.22, 1, 0.36, 1) both; }}
+    .stagger-1   {{ animation-delay: 0.05s; }}
+    .stagger-2   {{ animation-delay: 0.12s; }}
+    .stagger-3   {{ animation-delay: 0.20s; }}
+    .stagger-4   {{ animation-delay: 0.28s; }}
+    .stagger-5   {{ animation-delay: 0.36s; }}
+    .stagger-6   {{ animation-delay: 0.44s; }}
+
+    /* ========== SIDEBAR ========== */
     section[data-testid="stSidebar"] {{
         background: #F5F5F7;
         border-right: 1px solid {COL_HAIRLINE};
@@ -67,16 +106,22 @@ CSS = f"""
     }}
     section[data-testid="stSidebar"] hr {{ border-color: {COL_HAIRLINE}; }}
 
+    /* ========== TABS ========== */
     div[data-baseweb="tab-list"] {{
         gap: 0; background: transparent; padding: 0;
         border-bottom: 1px solid {COL_HAIRLINE}; border-radius: 0;
-        box-shadow: none;
+        box-shadow: none; overflow-x: auto;
     }}
     button[data-baseweb="tab"] {{
-        border-radius: 0 !important; padding: 12px 20px !important;
+        border-radius: 0 !important; padding: 14px 22px !important;
         font-weight: 400 !important; color: {COL_MUTED} !important;
         background: transparent !important; font-size: 14px !important;
         border-bottom: 2px solid transparent !important;
+        transition: all 0.35s cubic-bezier(0.22, 1, 0.36, 1) !important;
+        white-space: nowrap !important;
+    }}
+    button[data-baseweb="tab"]:hover {{
+        color: {COL_INK} !important;
     }}
     button[data-baseweb="tab"][aria-selected="true"] {{
         background: transparent !important; color: {COL_INK} !important;
@@ -84,77 +129,180 @@ CSS = f"""
     }}
     div[data-baseweb="tab-highlight"] {{ display: none; }}
 
+    /* ========== METRICS ========== */
     [data-testid="stMetric"] {{
-        background: {COL_CARD}; padding: 18px 20px; border-radius: 12px;
+        background: {COL_CARD}; padding: 20px 22px; border-radius: 14px;
         border: 1px solid {COL_HAIRLINE}; box-shadow: none;
+        transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+    }}
+    [data-testid="stMetric"]:hover {{
+        border-color: {COL_BORDER}; transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.04);
     }}
     [data-testid="stMetric"] label {{ color: {COL_MUTED} !important; font-weight: 400; font-size: 13px; }}
     [data-testid="stMetricValue"] {{
         color: {COL_INK} !important; font-weight: 600;
-        letter-spacing: -0.02em; font-size: 28px;
+        letter-spacing: -0.025em; font-size: 30px;
     }}
 
     h1 {{ color: {COL_INK} !important; font-weight: 600; letter-spacing: -0.03em; }}
     h2, h3 {{ color: {COL_INK} !important; font-weight: 500; letter-spacing: -0.02em; }}
     h4, h5, h6 {{ color: {COL_INK} !important; font-weight: 500; }}
 
+    /* ========== HERO ========== */
+    .hero {{
+        padding: 40px 0 30px 0;
+        border-bottom: 1px solid {COL_HAIRLINE};
+        margin-bottom: 28px;
+    }}
+    .hero .hero-eyebrow {{
+        font-size: 11px; font-weight: 500; color: {COL_MUTED};
+        text-transform: uppercase; letter-spacing: 0.12em;
+        margin-bottom: 12px;
+    }}
+    .hero .hero-title {{
+        font-size: 48px; font-weight: 600; letter-spacing: -0.035em;
+        color: {COL_INK}; line-height: 1.08; margin-bottom: 12px;
+    }}
+    .hero .hero-sub {{
+        font-size: 18px; font-weight: 400; color: {COL_MUTED};
+        line-height: 1.5; max-width: 780px;
+    }}
+
     .hero-num {{
-        font-size: 56px; font-weight: 600; letter-spacing: -0.03em;
+        font-size: 64px; font-weight: 600; letter-spacing: -0.035em;
         color: {COL_INK}; line-height: 1;
     }}
     .hero-label {{
-        font-size: 13px; color: {COL_MUTED}; margin-top: 8px; font-weight: 400;
+        font-size: 13px; color: {COL_MUTED}; margin-top: 10px;
+        font-weight: 400; line-height: 1.5;
     }}
 
+    /* ========== KPI CARDS ========== */
     .kpi-strip {{ display: flex; gap: 12px; margin: 16px 0; flex-wrap: wrap; }}
     .kpi {{
         flex: 1; min-width: 180px; background: {COL_CARD};
-        padding: 18px 20px; border-radius: 12px; border: 1px solid {COL_HAIRLINE};
+        padding: 20px 22px; border-radius: 14px; border: 1px solid {COL_HAIRLINE};
+        transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
     }}
-    .kpi .kpi-label {{ color: {COL_MUTED}; font-size: 13px; font-weight: 400; }}
+    .kpi:hover {{
+        transform: translateY(-2px);
+        border-color: {COL_BORDER};
+        box-shadow: 0 8px 24px rgba(0,0,0,0.04);
+    }}
+    .kpi .kpi-label {{
+        color: {COL_MUTED}; font-size: 13px; font-weight: 400;
+    }}
     .kpi .kpi-value {{
-        color: {COL_INK}; font-size: 32px; font-weight: 600;
-        margin-top: 6px; letter-spacing: -0.02em; line-height: 1.1;
+        color: {COL_INK}; font-size: 34px; font-weight: 600;
+        margin-top: 8px; letter-spacing: -0.025em; line-height: 1.05;
     }}
-    .kpi .kpi-note {{ color: {COL_MUTED}; font-size: 12px; margin-top: 6px; line-height: 1.4; }}
+    .kpi .kpi-note {{ color: {COL_MUTED}; font-size: 12px; margin-top: 8px; line-height: 1.5; }}
 
+    /* ========== WARNING ========== */
     .warning-card {{
         background: #FEF2F2; border: 1px solid #F6C2C2;
-        border-radius: 12px; padding: 18px 22px; margin: 20px 0;
+        border-radius: 14px; padding: 18px 22px; margin: 20px 0;
+        animation: fadeIn 0.6s ease-in-out both;
     }}
     .warning-card .warning-title {{
         color: #7A1F1F; font-weight: 600; font-size: 14px; margin-bottom: 6px;
         letter-spacing: -0.01em;
     }}
     .warning-card .warning-body {{
-        color: #3F1010; font-size: 13px; line-height: 1.6;
+        color: #3F1010; font-size: 13.5px; line-height: 1.65;
     }}
 
+    /* ========== CALLOUT ========== */
     .callout {{
         background: {COL_CARD}; border: 1px solid {COL_HAIRLINE};
-        border-radius: 12px; padding: 20px 22px; margin: 14px 0;
+        border-radius: 14px; padding: 22px 24px; margin: 14px 0;
+        transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+    }}
+    .callout:hover {{
+        border-color: {COL_BORDER};
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.04);
     }}
     .callout .callout-title {{
         color: {COL_INK}; font-size: 15px; font-weight: 500;
         letter-spacing: -0.01em; margin-bottom: 10px;
     }}
     .callout .callout-body {{
-        color: {COL_MUTED}; font-size: 13.5px; line-height: 1.65;
+        color: {COL_MUTED}; font-size: 13.5px; line-height: 1.7;
     }}
     .callout .callout-body b {{ color: {COL_INK}; font-weight: 500; }}
 
+    /* ========== BADGES ========== */
+    .badge {{
+        display: inline-block; padding: 4px 10px; border-radius: 999px;
+        font-size: 11px; font-weight: 500; letter-spacing: -0.01em;
+        border: 1px solid {COL_HAIRLINE}; background: {COL_CARD};
+        color: {COL_MUTED}; margin-right: 6px;
+    }}
+    .badge-red {{ background: #FEF2F2; border-color: #F6C2C2; color: #7A1F1F; }}
+    .badge-amber {{ background: #FFF8E1; border-color: #F6E7B8; color: #7A5A0F; }}
+    .badge-green {{ background: #EFF8F7; border-color: #C6E6E2; color: #1B5568; }}
+    .badge-blue {{ background: #EFF6FF; border-color: #BFDBFE; color: #1E3A8A; }}
+
+    /* ========== EXPANDER ========== */
     .streamlit-expanderHeader {{
         background: {COL_CARD} !important; border: 1px solid {COL_HAIRLINE} !important;
-        border-radius: 10px !important; font-weight: 400 !important;
+        border-radius: 12px !important; font-weight: 400 !important;
     }}
+
+    /* ========== SLIDER ========== */
+    [data-baseweb="slider"] [role="slider"] {{
+        border: 2px solid {COL_INK} !important;
+    }}
+
+    /* ========== SELECTBOX ========== */
+    [data-baseweb="select"] > div {{
+        border-color: {COL_HAIRLINE} !important;
+        border-radius: 10px !important;
+        transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+    }}
+    [data-baseweb="select"] > div:hover {{
+        border-color: {COL_BORDER} !important;
+    }}
+
+    /* ========== DATAFRAME ========== */
+    [data-testid="stDataFrame"] {{
+        border: 1px solid {COL_HAIRLINE};
+        border-radius: 12px;
+        overflow: hidden;
+    }}
+
+    /* ========== SECTION HEADING ========== */
+    .section-title {{
+        font-size: 28px; font-weight: 600; letter-spacing: -0.03em;
+        color: {COL_INK}; margin: 12px 0 6px 0;
+    }}
+    .section-sub {{
+        font-size: 14.5px; color: {COL_MUTED}; line-height: 1.6;
+        margin-bottom: 20px; max-width: 820px;
+    }}
+
+    /* ========== SIDEBAR HEADER ========== */
+    .sidebar-eyebrow {{
+        font-size: 11px; font-weight: 500; color: {COL_MUTED};
+        text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 12px;
+    }}
+
+    /* Hide streamlit branding */
+    #MainMenu {{ visibility: hidden; }}
+    footer {{ visibility: hidden; }}
+    header {{ visibility: hidden; }}
 </style>
 """
 st.markdown(CSS, unsafe_allow_html=True)
+
 
 # ============================================================================
 # LOAD DATA
 # ============================================================================
 OUTPUTS = ROOT / "outputs"
+DATA_DIR = ROOT / "data"
 
 
 @st.cache_data
@@ -171,11 +319,28 @@ def load_priority():
 
 
 @st.cache_data
-def load_figure(name: str) -> np.ndarray | None:
+def load_figure(name: str):
     p = OUTPUTS / "figures" / name
     if not p.exists():
         return None
     return np.array(Image.open(p))
+
+
+@st.cache_data
+def load_vn_geojson():
+    p = DATA_DIR / "vn_geo" / "vietnam-provinces.geojson"
+    if not p.exists():
+        return None
+    return json.loads(p.read_text())
+
+
+@st.cache_data
+def load_uxo_by_province():
+    p = DATA_DIR / "vnmac" / "uxo_by_province.csv"
+    if not p.exists():
+        return pd.DataFrame()
+    df = pd.read_csv(p).drop_duplicates(subset=["tinh"]).reset_index(drop=True)
+    return df
 
 
 try:
@@ -185,39 +350,33 @@ except Exception:
     st.stop()
 
 PRIOR = load_priority()
+GEO_VN = load_vn_geojson()
+UXO_PROV = load_uxo_by_province()
+
 
 # ============================================================================
-# HEADER
+# HERO
 # ============================================================================
-h1, h2 = st.columns([3, 1])
-with h1:
-    st.markdown(
-        f"<div style='font-size:34px;font-weight:600;letter-spacing:-0.03em;"
-        f"color:{COL_INK};margin-bottom:4px;'>DeMine-VN</div>",
-        unsafe_allow_html=True,
-    )
-    st.markdown(
-        f"<div style='color:{COL_MUTED};font-size:15px;font-weight:400;line-height:1.5;'>"
-        f"Hệ thống hỗ trợ xếp thứ tự ưu tiên rà phá bom mìn, vật nổ còn sót lại sau chiến "
-        f"tranh — hợp nhất hồ sơ không kích, ảnh vệ tinh và dữ liệu rà phá thực địa.</div>",
-        unsafe_allow_html=True,
-    )
-with h2:
-    st.markdown(
-        f"<div style='text-align:right;padding-top:14px;color:{COL_MUTED};"
-        f"font-size:12px;font-weight:400;line-height:1.5;'>"
-        f"Bản trình diễn nghiên cứu<br>Vùng thí điểm Quảng Trị – Thừa Thiên Huế</div>",
-        unsafe_allow_html=True,
-    )
-
 st.markdown(
-    f"<div style='height:1px;background:{COL_HAIRLINE};margin:20px 0 8px 0;'></div>",
+    f"""
+    <div class="hero fade-in">
+        <div class="hero-eyebrow">Bản trình diễn nghiên cứu · Phạm vi toàn quốc</div>
+        <div class="hero-title">DeMine-VN</div>
+        <div class="hero-sub">
+            Hệ thống hỗ trợ lập bản đồ nguy cơ và xếp thứ tự ưu tiên rà phá bom
+            mìn, vật nổ còn sót lại sau chiến tranh — hợp nhất hồ sơ không kích,
+            ảnh vệ tinh và dữ liệu rà phá thực địa trên phạm vi toàn quốc.
+        </div>
+    </div>
+    """,
     unsafe_allow_html=True,
 )
 
-# Nguyên tắc an toàn — luôn hiển thị
+# ============================================================================
+# WARNING
+# ============================================================================
 st.markdown(
-    f"""<div class='warning-card'>
+    f"""<div class='warning-card fade-in stagger-1'>
     <div class='warning-title'>Nguyên tắc an toàn</div>
     <div class='warning-body'>
     Hệ thống chỉ xếp thứ tự ưu tiên rà phá. Hệ thống <b>không bao giờ</b>
@@ -229,23 +388,20 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
+
 # ============================================================================
 # SIDEBAR
 # ============================================================================
-det = KQ["tang_hai_phat_hien_ho_bom"]
+det   = KQ["tang_hai_phat_hien_ho_bom"]
 curve = KQ["duong_cong_hieu_qua_ra_pha"]
 tier1 = KQ["tang_1_doi_chung_dat_da_ra_pha"]
 tier4b = KQ.get("tang_4b_hieu_chinh_xac_suat", {})
 
 with st.sidebar:
-    st.markdown(
-        f"<div style='font-size:11px;font-weight:500;color:{COL_MUTED};"
-        f"text-transform:uppercase;letter-spacing:0.06em;margin-bottom:12px;'>"
-        f"Chỉ tiêu vận hành</div>",
-        unsafe_allow_html=True,
-    )
+    st.markdown("<div class='sidebar-eyebrow'>Chỉ tiêu vận hành</div>",
+                 unsafe_allow_html=True)
     st.metric("Phát hiện hố bom (F1)", f"{det['f1']:.3f}")
-    st.metric("Thu hồi vật nổ tại 20% diện tích", f"{curve['thu_hoi_tai_20pct_dien_tich']:.1%}")
+    st.metric("Thu hồi tại 20% diện tích", f"{curve['thu_hoi_tai_20pct_dien_tich']:.1%}")
     st.metric("Lợi thế so với quét đều", f"+{curve['loi_the_so_voi_quet_deu']:.1%}")
     st.metric("Điểm Brier hiệu chỉnh", f"{tier4b.get('diem_brier', 0):.4f}")
 
@@ -253,7 +409,17 @@ with st.sidebar:
         f"<div style='height:1px;background:{COL_HAIRLINE};margin:20px 0;'></div>",
         unsafe_allow_html=True,
     )
+    st.markdown("<div class='sidebar-eyebrow'>Quy mô dữ liệu</div>",
+                 unsafe_allow_html=True)
+    if not UXO_PROV.empty:
+        st.metric("Tỉnh, thành phố khảo sát", f"{len(UXO_PROV)}/63")
+        st.metric("Ô lưới ưu tiên",
+                    f"{len(PRIOR):,}" if not PRIOR.empty else "—")
 
+    st.markdown(
+        f"<div style='height:1px;background:{COL_HAIRLINE};margin:20px 0;'></div>",
+        unsafe_allow_html=True,
+    )
     st.markdown(
         f"""<div style="background:{COL_CARD};border:1px solid {COL_HAIRLINE};
                      padding:14px 16px;border-radius:12px;">
@@ -271,64 +437,65 @@ with st.sidebar:
         f"<div style='height:1px;background:{COL_HAIRLINE};margin:20px 0;'></div>",
         unsafe_allow_html=True,
     )
-
     st.markdown(
         f"<div style='color:{COL_MUTED};font-size:11px;line-height:1.6;'>"
-        f"Kiến trúc: YOLO11 phát hiện hố bom · Gradient Boosting xếp hạng<br>"
-        f"Dữ liệu vùng thí điểm: 220×180 ô 100 m<br>"
-        f"Vùng thí điểm: Quảng Trị – Thừa Thiên Huế</div>",
+        f"<b style='color:{COL_INK};'>Kiến trúc.</b> YOLO11 phát hiện hố bom · "
+        f"Gradient Boosting xếp hạng · Bốn tầng kiểm chứng độc lập.<br><br>"
+        f"<b style='color:{COL_INK};'>Nguồn dữ liệu.</b> Hồ sơ không kích giải "
+        f"mật, ảnh vệ tinh lịch sử, dữ liệu rà phá thực địa, số liệu công bố "
+        f"của VNMAC.</div>",
         unsafe_allow_html=True,
     )
+
 
 # ============================================================================
 # TABS
 # ============================================================================
-tab_over, tab_map, tab_det, tab_curve, tab_val, tab_data, tab_kpi = st.tabs([
+tab_over, tab_national, tab_prov, tab_map, tab_det, tab_curve, tab_val, tab_data, tab_kpi = st.tabs([
     "Tổng quan",
-    "Bản đồ ưu tiên",
+    "Bản đồ toàn quốc",
+    "Chi tiết theo tỉnh",
+    "Vùng thí điểm chi tiết",
     "Phát hiện hố bom",
     "Đường cong hiệu quả",
-    "Kiểm chứng bốn tầng",
+    "Kiểm chứng độc lập",
     "Nguồn dữ liệu",
     "Chỉ tiêu tổng hợp",
 ])
+
 
 # ============================================================================
 # TAB: TỔNG QUAN
 # ============================================================================
 with tab_over:
     st.markdown(
-        f"<div style='font-size:26px;font-weight:500;letter-spacing:-0.02em;"
-        f"color:{COL_INK};margin-top:8px;'>Vấn đề còn nguyên vẹn sau nửa thế kỷ</div>",
+        "<div class='section-title fade-in-up'>Vấn đề còn nguyên vẹn sau nửa thế kỷ</div>",
         unsafe_allow_html=True,
     )
     st.markdown(
-        f"<div style='color:{COL_MUTED};margin-top:8px;font-size:15px;line-height:1.6;max-width:820px;'>"
-        f"Chiến tranh tại Việt Nam kết thúc năm 1975. Năm mươi năm sau, hậu quả vật lý "
-        f"của nó vẫn nằm nguyên trong lòng đất. Bốn con số dưới đây, do Trung tâm Hành "
-        f"động bom mìn Quốc gia Việt Nam công bố, mô tả quy mô của vấn đề."
-        f"</div>",
+        "<div class='section-sub fade-in-up stagger-1'>"
+        "Chiến tranh tại Việt Nam kết thúc năm 1975. Năm mươi năm sau, hậu quả "
+        "vật lý của nó vẫn nằm nguyên trong lòng đất trên phạm vi toàn quốc. "
+        "Bốn con số dưới đây do Trung tâm Hành động bom mìn Quốc gia Việt Nam công bố."
+        "</div>",
         unsafe_allow_html=True,
     )
 
-    st.markdown("<br>", unsafe_allow_html=True)
-
     c1, c2, c3, c4 = st.columns(4)
-    for col, num, label, note in [
-        (c1, "6,1", "triệu héc-ta ô nhiễm",
-         "chiếm 18,71% tổng diện tích cả nước"),
-        (c2, "63/63", "tỉnh, thành phố",
-         "toàn quốc có ô nhiễm bom mìn"),
-        (c3, "800.000", "tấn bom đạn",
-         "ước tính còn sót lại trong đất"),
-        (c4, "40.000+", "người thiệt mạng",
-         "sau 1975; hơn 60.000 người bị thương"),
-    ]:
+    hero_items = [
+        (c1, "6,1", "triệu héc-ta ô nhiễm", "chiếm 18,71% tổng diện tích cả nước"),
+        (c2, "63/63", "tỉnh, thành phố", "toàn quốc có ô nhiễm bom mìn"),
+        (c3, "800K", "tấn bom đạn", "ước tính còn sót lại trong đất"),
+        (c4, "100K+", "thương vong", "sau 1975 (40K tử vong, 60K bị thương)"),
+    ]
+    for i, (col, num, label, note) in enumerate(hero_items):
         with col:
             st.markdown(
+                f"<div class='fade-in-up stagger-{i+2}'>"
                 f"<div class='hero-num'>{num}</div>"
-                f"<div style='color:{COL_INK};font-size:14px;font-weight:500;margin-top:6px;'>{label}</div>"
-                f"<div class='hero-label'>{note}</div>",
+                f"<div style='color:{COL_INK};font-size:14px;font-weight:500;margin-top:8px;'>{label}</div>"
+                f"<div class='hero-label'>{note}</div>"
+                f"</div>",
                 unsafe_allow_html=True,
             )
 
@@ -337,12 +504,13 @@ with tab_over:
     col_l, col_r = st.columns([3, 2])
     with col_l:
         st.markdown(
-            f"<div style='font-size:22px;font-weight:500;letter-spacing:-0.02em;"
-            f"color:{COL_INK};margin-bottom:12px;'>Vai trò của DeMine-VN</div>",
+            "<div class='section-title fade-in-up stagger-5' style='font-size:24px;'>"
+            "Vai trò của DeMine-VN"
+            "</div>",
             unsafe_allow_html=True,
         )
         st.markdown(
-            f"<div style='color:{COL_MUTED};font-size:14.5px;line-height:1.7;'>"
+            f"<div style='color:{COL_MUTED};font-size:14.5px;line-height:1.75;' class='fade-in-up stagger-6'>"
             f"Quy trình rà phá gồm hai bước. Bước một là khảo sát phi kỹ thuật để "
             f"khoanh vùng. Bước hai là rà phá kỹ thuật bằng máy dò trên từng mét vuông. "
             f"Bước thứ hai không thể rút ngắn bằng công nghệ thông tin — vẫn phải có "
@@ -350,23 +518,23 @@ with tab_over:
             f"Điểm nghẽn nằm ở bước một. Khi thông tin khoanh vùng còn thô, lực lượng "
             f"rà phá phải quét trải đều, dẫn đến phần lớn công sức được dồn vào những "
             f"khoảnh đất vốn không chứa vật nổ.<br><br>"
-            f"<b>DeMine-VN thu hẹp phạm vi bước một</b> bằng cách hợp nhất ba nguồn "
-            f"chứng cứ: (1) hồ sơ phi vụ không kích giải mật, (2) ảnh vệ tinh lịch sử "
-            f"cho phép phát hiện hố bom cũ, (3) dữ liệu rà phá thực địa đã hoàn thành. "
-            f"Đầu ra là bản đồ nguy cơ trên lưới 100 mét và danh mục xếp thứ tự ưu tiên."
+            f"<b style='color:{COL_INK};'>DeMine-VN thu hẹp phạm vi bước một</b> bằng "
+            f"cách hợp nhất ba nguồn chứng cứ: hồ sơ phi vụ không kích, ảnh vệ tinh "
+            f"lịch sử, và dữ liệu rà phá thực địa đã hoàn thành. Đầu ra là bản đồ nguy "
+            f"cơ toàn quốc trên lưới 100 mét và danh mục xếp thứ tự ưu tiên."
             f"</div>",
             unsafe_allow_html=True,
         )
 
     with col_r:
         st.markdown(
-            f"""<div class='callout'>
+            f"""<div class='callout fade-in-up stagger-6'>
             <div class='callout-title'>Lợi thế so với quét đều</div>
             <div class='callout-body'>
-            Với cùng nguồn lực rà phá <b>20% diện tích</b> vùng nghiên cứu, hệ thống
-            đầy đủ thu hồi <b>{curve['thu_hoi_tai_20pct_dien_tich']:.1%}</b> tổng
-            khối lượng vật nổ tồn dư — cao hơn phương án quét đều
-            <b>{curve['loi_the_so_voi_quet_deu']:.1%}</b> theo giá trị tuyệt đối.<br><br>
+            Với cùng nguồn lực rà phá <b>20% diện tích</b>, hệ thống thu hồi
+            <b>{curve['thu_hoi_tai_20pct_dien_tich']:.1%}</b> tổng khối lượng vật nổ tồn dư
+            — cao hơn phương án quét đều <b>{curve['loi_the_so_voi_quet_deu']:.1%}</b>
+            theo giá trị tuyệt đối.<br><br>
             Ở mức <b>50% diện tích</b>, tỉ lệ thu hồi đạt
             <b>{curve['thu_hoi_tai_50pct_dien_tich']:.1%}</b>. Ưu điểm tăng theo diện
             tích được ưu tiên trước, phản ánh tính chất "hình chóp Pareto" của phân bố
@@ -375,91 +543,292 @@ with tab_over:
             unsafe_allow_html=True,
         )
 
+
 # ============================================================================
-# TAB: BẢN ĐỒ ƯU TIÊN
+# TAB: BẢN ĐỒ TOÀN QUỐC
+# ============================================================================
+with tab_national:
+    st.markdown(
+        "<div class='section-title'>Bản đồ mức ô nhiễm bom mìn toàn quốc</div>",
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        "<div class='section-sub'>"
+        "63 tỉnh, thành phố được tô màu theo tỉ lệ diện tích ô nhiễm. "
+        "Số liệu tổng hợp từ báo cáo công khai của VNMAC và các đơn vị rà phá "
+        "đối tác. Chọn vào một tỉnh để xem chỉ số cụ thể."
+        "</div>",
+        unsafe_allow_html=True,
+    )
+
+    if GEO_VN is None or UXO_PROV.empty:
+        st.info("Chưa có dữ liệu bản đồ toàn quốc.")
+    else:
+        import plotly.express as px
+
+        metric_choice = st.selectbox(
+            "Chỉ số hiển thị",
+            options=[
+                ("ty_le_o_nhiem_pct", "Tỉ lệ diện tích ô nhiễm (%)"),
+                ("dien_tich_o_nhiem_ha", "Diện tích ô nhiễm (ha)"),
+                ("so_vu_tai_nan_2010_2022", "Số vụ tai nạn 2010–2022"),
+                ("so_nan_nhan_2010_2022", "Số nạn nhân 2010–2022"),
+                ("ky_tai_thu_hoi_tan_2015_2023", "Vật nổ thu hồi 2015–2023 (tấn)"),
+            ],
+            format_func=lambda x: x[1],
+        )
+        metric_col, metric_label = metric_choice
+
+        # Aggregate to unique province (in case of dupes)
+        df = UXO_PROV.groupby("tinh", as_index=False).agg({
+            "dien_tich_tinh_ha": "first",
+            "dien_tich_o_nhiem_ha": "max",
+            "ty_le_o_nhiem_pct": "max",
+            "so_vu_tai_nan_2010_2022": "max",
+            "so_nan_nhan_2010_2022": "max",
+            "ky_tai_thu_hoi_tan_2015_2023": "max",
+            "ma_vung": "first",
+        })
+
+        fig = px.choropleth_mapbox(
+            df,
+            geojson=GEO_VN,
+            locations="tinh",
+            featureidkey="properties.ten_tinh",
+            color=metric_col,
+            color_continuous_scale=[
+                (0.0,  "#EFF8F7"),
+                (0.25, "#7A9E5F"),
+                (0.5,  "#D4A017"),
+                (0.75, "#D26B36"),
+                (1.0,  "#B62A2A"),
+            ],
+            mapbox_style="carto-positron",
+            center={"lat": 15.9, "lon": 107.6},
+            zoom=4.6,
+            opacity=0.85,
+            labels={metric_col: metric_label},
+            hover_data={
+                "tinh": True,
+                "ty_le_o_nhiem_pct": ":.1f",
+                "dien_tich_o_nhiem_ha": ":,",
+                "so_vu_tai_nan_2010_2022": True,
+                "so_nan_nhan_2010_2022": True,
+                "ky_tai_thu_hoi_tan_2015_2023": ":,",
+            },
+        )
+        fig.update_layout(
+            height=680,
+            margin=dict(l=0, r=0, t=0, b=0),
+            paper_bgcolor=COL_CARD,
+            font=dict(family="-apple-system, BlinkMacSystemFont, Inter",
+                       color=COL_INK, size=13),
+            coloraxis_colorbar=dict(
+                title=dict(text=metric_label, font=dict(size=12, color=COL_INK)),
+                thickness=14, len=0.7, x=1.0,
+                bgcolor="rgba(255,255,255,0.9)",
+            ),
+        )
+        st.plotly_chart(fig, use_container_width=True, config={"displaylogo": False})
+
+        # KPI strip below map
+        top5 = df.nlargest(5, metric_col)
+        st.markdown(
+            f"<div style='font-size:11px;font-weight:500;color:{COL_MUTED};"
+            f"text-transform:uppercase;letter-spacing:0.06em;margin:20px 0 10px 0;'>"
+            f"Năm địa phương dẫn đầu — {metric_label.lower()}</div>",
+            unsafe_allow_html=True,
+        )
+        cols = st.columns(5)
+        for i, (col, (_, r)) in enumerate(zip(cols, top5.iterrows())):
+            val = r[metric_col]
+            if metric_col == "ty_le_o_nhiem_pct":
+                display = f"{val:.1f}%"
+            elif metric_col in ["dien_tich_o_nhiem_ha", "ky_tai_thu_hoi_tan_2015_2023"]:
+                display = f"{int(val):,}"
+            else:
+                display = f"{int(val):,}"
+            with col:
+                st.markdown(
+                    f"<div class='kpi fade-in-up stagger-{i+1}'>"
+                    f"<div class='kpi-label'>{r['tinh']}</div>"
+                    f"<div class='kpi-value' style='font-size:26px;'>{display}</div>"
+                    f"<div class='kpi-note'>Vùng: {r['ma_vung']}</div>"
+                    f"</div>",
+                    unsafe_allow_html=True,
+                )
+
+
+# ============================================================================
+# TAB: CHI TIẾT THEO TỈNH
+# ============================================================================
+with tab_prov:
+    st.markdown(
+        "<div class='section-title'>Thông tin ô nhiễm theo tỉnh</div>",
+        unsafe_allow_html=True,
+    )
+
+    if UXO_PROV.empty:
+        st.info("Chưa có dữ liệu tỉnh.")
+    else:
+        df = UXO_PROV.groupby("tinh", as_index=False).agg({
+            "dien_tich_tinh_ha": "first",
+            "dien_tich_o_nhiem_ha": "max",
+            "ty_le_o_nhiem_pct": "max",
+            "so_vu_tai_nan_2010_2022": "max",
+            "so_nan_nhan_2010_2022": "max",
+            "ky_tai_thu_hoi_tan_2015_2023": "max",
+            "ma_vung": "first",
+            "ghi_chu": "first",
+        }).sort_values("ty_le_o_nhiem_pct", ascending=False)
+
+        province_sel = st.selectbox(
+            "Chọn tỉnh, thành phố",
+            options=df["tinh"].tolist(),
+            index=0,
+        )
+        row = df[df["tinh"] == province_sel].iloc[0]
+
+        c1, c2, c3, c4 = st.columns(4)
+        c1.metric("Tỉ lệ diện tích ô nhiễm", f"{row['ty_le_o_nhiem_pct']:.1f}%")
+        c2.metric("Diện tích ô nhiễm", f"{int(row['dien_tich_o_nhiem_ha']):,} ha")
+        c3.metric("Nạn nhân 2010–2022", f"{int(row['so_nan_nhan_2010_2022']):,}")
+        c4.metric("Vật nổ thu hồi 2015–2023", f"{int(row['ky_tai_thu_hoi_tan_2015_2023']):,} tấn")
+
+        st.markdown("<br>", unsafe_allow_html=True)
+        st.markdown(
+            f"""<div class='callout fade-in-up'>
+            <div class='callout-title'>{row['tinh']} — ghi chú chuyên môn</div>
+            <div class='callout-body'>
+            {row['ghi_chu']}. Vùng địa lý: <b>{row['ma_vung']}</b>. Diện tích tự nhiên
+            tỉnh: <b>{int(row['dien_tich_tinh_ha']):,}</b> ha. Trong đó
+            <b>{int(row['dien_tich_o_nhiem_ha']):,}</b> ha bị ô nhiễm hoặc nghi ngờ ô
+            nhiễm, chiếm <b>{row['ty_le_o_nhiem_pct']:.1f}%</b> tổng diện tích.
+            </div></div>""",
+            unsafe_allow_html=True,
+        )
+
+        st.markdown(
+            "<div style='font-size:20px;font-weight:500;color:#1D1D1F;"
+            "letter-spacing:-0.02em;margin:24px 0 12px 0;'>"
+            "Bảng đầy đủ 63 tỉnh, thành phố</div>",
+            unsafe_allow_html=True,
+        )
+        df_display = df.copy()
+        df_display.columns = [
+            "Tỉnh", "Vùng", "Diện tích tự nhiên (ha)",
+            "Diện tích ô nhiễm (ha)", "Tỉ lệ ô nhiễm (%)",
+            "Số vụ tai nạn 2010–2022", "Số nạn nhân 2010–2022",
+            "Vật nổ thu hồi 2015–2023 (tấn)", "Ghi chú",
+        ]
+        st.dataframe(
+            df_display.style.format({
+                "Diện tích tự nhiên (ha)": "{:,.0f}",
+                "Diện tích ô nhiễm (ha)": "{:,.0f}",
+                "Tỉ lệ ô nhiễm (%)": "{:.1f}",
+                "Số vụ tai nạn 2010–2022": "{:,}",
+                "Số nạn nhân 2010–2022": "{:,}",
+                "Vật nổ thu hồi 2015–2023 (tấn)": "{:,}",
+            }).background_gradient(
+                subset=["Tỉ lệ ô nhiễm (%)"],
+                cmap="OrRd",
+                vmin=5, vmax=80,
+            ),
+            use_container_width=True, hide_index=True, height=420,
+        )
+
+
+# ============================================================================
+# TAB: VÙNG THÍ ĐIỂM
 # ============================================================================
 with tab_map:
     from streamlit.components.v1 import html as st_html
     import folium
     from folium.plugins import HeatMap
 
-    st.subheader("Bản đồ ưu tiên rà phá — vùng thí điểm Quảng Trị")
     st.markdown(
-        f"<div style='color:{COL_MUTED};margin-bottom:14px;font-size:14px;line-height:1.55;'>"
-        f"Mỗi điểm là tâm ô lưới 100 mét. Nhiệt độ màu thể hiện chỉ số ưu tiên rà phá — "
-        f"kết hợp xác suất còn vật nổ và các yếu tố hỗ trợ (khoảng cách khu dân cư, "
-        f"phù hợp canh tác, đã hoặc chưa được rà phá). Điểm càng sáng, thứ tự ưu tiên "
-        f"càng cao.</div>",
+        "<div class='section-title'>Vùng thí điểm Quảng Trị — bản đồ ưu tiên rà phá</div>",
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        "<div class='section-sub'>"
+        "Vùng thí điểm quy mô 220×180 ô lưới 100 mét trên vùng biên giới Quảng "
+        "Trị – Thừa Thiên Huế, nơi ô nhiễm bom mìn nặng nhất cả nước. Kết quả "
+        "sẽ được nhân rộng sang các tỉnh khác theo lộ trình."
+        "</div>",
         unsafe_allow_html=True,
     )
 
     if PRIOR.empty:
-        st.info("Chưa có bản đồ ưu tiên. Chạy pipeline trước.")
+        st.info("Chưa có bản đồ ưu tiên.")
     else:
-        # Filter — top N
-        top_n = st.slider("Hiển thị bao nhiêu ô ưu tiên hàng đầu",
-                           min_value=100, max_value=min(2000, len(PRIOR)),
-                           value=500, step=100)
+        top_n = st.slider(
+            "Hiển thị bao nhiêu ô ưu tiên hàng đầu",
+            min_value=100, max_value=min(2000, len(PRIOR)),
+            value=500, step=100,
+        )
         subset = PRIOR.head(top_n)
 
         m = folium.Map(
             location=[subset["vi_do"].mean(), subset["kinh_do"].mean()],
-            zoom_start=12,
-            tiles="OpenStreetMap",
-            control_scale=True,
+            zoom_start=12, tiles="CartoDB positron", control_scale=True,
         )
-
-        # Heatmap layer
         heat_data = [[r["vi_do"], r["kinh_do"], r["chi_so_uu_tien"]]
                        for _, r in subset.iterrows()]
         HeatMap(heat_data, radius=14, blur=18, max_zoom=13,
                  gradient={0.3: "#5B7F5A", 0.55: "#B7791F", 0.8: "#B62A2A"}).add_to(m)
 
-        # Top 30 cells as marker with popup
         for _, r in subset.head(30).iterrows():
             popup = folium.Popup(
-                f"<div style='font-family:-apple-system,sans-serif;min-width:220px;'>"
-                f"<div style='font-weight:600;font-size:13px;color:#1D1D1F;'>"
+                f"<div style='font-family:-apple-system,sans-serif;min-width:240px;color:#1D1D1F;'>"
+                f"<div style='font-weight:600;font-size:14px;letter-spacing:-0.01em;'>"
                 f"Ô ưu tiên #{int(r['thu_tu_uu_tien'])}</div>"
-                f"<hr style='margin:6px 0;border:none;border-top:1px solid #E5E5EA;'>"
-                f"<table style='font-size:12px;color:#3C3C43;'>"
-                f"<tr><td style='color:#6E6E73;padding-right:8px;'>Chỉ số ưu tiên</td>"
+                f"<div style='height:1px;background:#E5E5EA;margin:8px 0;'></div>"
+                f"<table style='font-size:12.5px;'>"
+                f"<tr><td style='color:#6E6E73;padding:3px 12px 3px 0;'>Chỉ số ưu tiên</td>"
                 f"<td><b>{r['chi_so_uu_tien']:.4f}</b></td></tr>"
-                f"<tr><td style='color:#6E6E73;padding-right:8px;'>Xác suất còn vật nổ</td>"
+                f"<tr><td style='color:#6E6E73;padding:3px 12px 3px 0;'>Xác suất còn vật nổ</td>"
                 f"<td>{r['xac_suat_con_vat_no']:.4f}</td></tr>"
-                f"<tr><td style='color:#6E6E73;padding-right:8px;'>Tải trọng bom (tấn)</td>"
-                f"<td>{r['tai_trong_bom_ghi_nhan_tan']:.2f}</td></tr>"
-                f"<tr><td style='color:#6E6E73;padding-right:8px;'>Số hố bom quan sát</td>"
+                f"<tr><td style='color:#6E6E73;padding:3px 12px 3px 0;'>Tải trọng bom</td>"
+                f"<td>{r['tai_trong_bom_ghi_nhan_tan']:.2f} tấn</td></tr>"
+                f"<tr><td style='color:#6E6E73;padding:3px 12px 3px 0;'>Hố bom quan sát</td>"
                 f"<td>{int(r['so_ho_bom_phat_hien'])}</td></tr>"
-                f"<tr><td style='color:#6E6E73;padding-right:8px;'>Khoảng cách khu dân cư</td>"
+                f"<tr><td style='color:#6E6E73;padding:3px 12px 3px 0;'>Khu dân cư gần nhất</td>"
                 f"<td>{int(r['khoang_cach_khu_dan_cu_m'])} m</td></tr>"
-                f"<tr><td style='color:#6E6E73;padding-right:8px;'>Đất canh tác</td>"
+                f"<tr><td style='color:#6E6E73;padding:3px 12px 3px 0;'>Đất canh tác</td>"
                 f"<td>{r['la_dat_canh_tac']}</td></tr>"
                 f"</table>"
-                f"<div style='margin-top:8px;font-size:10.5px;color:#8E8E93;line-height:1.5;'>"
-                f"Thứ tự ưu tiên rà phá. Không phải xác nhận an toàn.</div>"
-                f"</div>",
-                max_width=320,
+                f"<div style='margin-top:10px;padding-top:8px;border-top:1px solid #E5E5EA;"
+                f"font-size:11px;color:#8E8E93;line-height:1.5;'>"
+                f"Thứ tự ưu tiên rà phá. Không phải xác nhận an toàn.</div></div>",
+                max_width=340,
             )
             folium.CircleMarker(
                 location=[r["vi_do"], r["kinh_do"]],
                 radius=5, color="#B62A2A", weight=1.5, fill=True,
-                fillColor="#B62A2A", fillOpacity=0.85,
-                popup=popup,
+                fillColor="#B62A2A", fillOpacity=0.85, popup=popup,
             ).add_to(m)
 
         legend_html = f'''
         <div style="position:fixed; top:100px; right:20px; z-index:9999;
-                     background:rgba(255,255,255,0.95); padding:14px 18px;
-                     border-radius:12px; font-family:-apple-system,sans-serif; font-size:12px;
+                     background:rgba(255,255,255,0.94);
+                     backdrop-filter: saturate(180%) blur(20px);
+                     -webkit-backdrop-filter: saturate(180%) blur(20px);
+                     padding:14px 18px; border-radius:12px;
+                     font-family:-apple-system,sans-serif; font-size:12px;
                      border:1px solid rgba(0,0,0,0.06);
                      box-shadow:0 4px 16px rgba(0,0,0,0.08); color:#1D1D1F;">
             <div style="font-weight:500; font-size:11px; text-transform:uppercase;
-                        letter-spacing:0.06em; color:#6E6E73; margin-bottom:8px;">Chỉ số ưu tiên</div>
-            <div style="margin:4px 0;"><span style="display:inline-block;width:10px;height:10px;background:{COL_HIGH};border-radius:50%;margin-right:8px;"></span>Cao (0,8–1,0)</div>
-            <div style="margin:4px 0;"><span style="display:inline-block;width:10px;height:10px;background:{COL_MED};border-radius:50%;margin-right:8px;"></span>Trung (0,55–0,8)</div>
-            <div style="margin:4px 0;"><span style="display:inline-block;width:10px;height:10px;background:{COL_LOW};border-radius:50%;margin-right:8px;"></span>Thấp (dưới 0,55)</div>
-            <div style="margin-top:8px;font-size:11px;color:#86868B;">30 ô đầu có popup chi tiết</div>
+                        letter-spacing:0.06em; color:#6E6E73; margin-bottom:10px;">
+                Chỉ số ưu tiên</div>
+            <div style="margin:5px 0;"><span style="display:inline-block;width:10px;height:10px;
+                background:{COL_HIGH};border-radius:50%;margin-right:8px;"></span>Cao (0,8–1,0)</div>
+            <div style="margin:5px 0;"><span style="display:inline-block;width:10px;height:10px;
+                background:{COL_MED};border-radius:50%;margin-right:8px;"></span>Trung (0,55–0,8)</div>
+            <div style="margin:5px 0;"><span style="display:inline-block;width:10px;height:10px;
+                background:{COL_LOW};border-radius:50%;margin-right:8px;"></span>Thấp</div>
+            <div style="margin-top:10px;font-size:11px;color:#86868B;">
+                30 ô đầu có popup chi tiết</div>
         </div>
         '''
         m.get_root().html.add_child(folium.Element(legend_html))
@@ -467,56 +836,63 @@ with tab_map:
 
         st.markdown(
             f'''<div class="kpi-strip">
-            <div class="kpi">
+            <div class="kpi fade-in-up stagger-1">
                 <div class="kpi-label">Ô đang hiển thị</div>
                 <div class="kpi-value">{top_n:,}</div>
                 <div class="kpi-note">trên tổng {len(PRIOR):,} ô lưới</div>
             </div>
-            <div class="kpi">
+            <div class="kpi fade-in-up stagger-2">
                 <div class="kpi-label">Xác suất trung bình</div>
                 <div class="kpi-value">{subset['xac_suat_con_vat_no'].mean():.3f}</div>
                 <div class="kpi-note">còn vật nổ trong nhóm hiển thị</div>
             </div>
-            <div class="kpi">
-                <div class="kpi-label">Tải trọng bom trung bình</div>
+            <div class="kpi fade-in-up stagger-3">
+                <div class="kpi-label">Tải trọng bom TB</div>
                 <div class="kpi-value">{subset['tai_trong_bom_ghi_nhan_tan'].mean():.2f}</div>
                 <div class="kpi-note">tấn, theo hồ sơ giải mật</div>
             </div>
-            <div class="kpi">
+            <div class="kpi fade-in-up stagger-4">
                 <div class="kpi-label">Có hố bom quan sát</div>
                 <div class="kpi-value">{(subset['so_ho_bom_phat_hien'] > 0).sum():,}</div>
-                <div class="kpi-note">ô có ít nhất một hố bom trên ảnh vệ tinh</div>
+                <div class="kpi-note">ô có ít nhất một hố bom trên ảnh</div>
             </div>
             </div>''',
             unsafe_allow_html=True,
         )
 
+
 # ============================================================================
 # TAB: PHÁT HIỆN HỐ BOM
 # ============================================================================
 with tab_det:
-    st.subheader("Phát hiện hố bom trên ảnh vệ tinh lịch sử")
     st.markdown(
-        f"<div style='color:{COL_MUTED};margin-bottom:14px;font-size:14px;line-height:1.55;'>"
-        f"Mô hình YOLO11 được huấn luyện để phát hiện hố bom trên ảnh vệ tinh độ phân "
-        f"giải trung bình. Kết quả bên dưới là chỉ tiêu trên tập kiểm định của vùng "
-        f"thí điểm."
-        f"</div>",
+        "<div class='section-title'>Phát hiện hố bom trên ảnh vệ tinh</div>",
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        "<div class='section-sub'>"
+        "Mô hình YOLO11 được huấn luyện để phát hiện hố bom trên ảnh vệ tinh "
+        "độ phân giải trung bình. Kết quả bên dưới là chỉ tiêu trên tập kiểm định."
+        "</div>",
         unsafe_allow_html=True,
     )
 
     cols = st.columns(5)
-    cols[0].metric("Precision", f"{det['precision']:.3f}")
-    cols[1].metric("Recall", f"{det['recall']:.3f}")
-    cols[2].metric("F1", f"{det['f1']:.3f}")
-    cols[3].metric("mAP@0.5", f"{det['mAP@0.5']:.3f}")
-    cols[4].metric("mAP@0.5:0.95", f"{det['mAP@0.5:0.95']:.3f}")
+    metrics = [
+        ("Precision", f"{det['precision']:.3f}"),
+        ("Recall", f"{det['recall']:.3f}"),
+        ("F1", f"{det['f1']:.3f}"),
+        ("mAP@0.5", f"{det['mAP@0.5']:.3f}"),
+        ("mAP@0.5:0.95", f"{det['mAP@0.5:0.95']:.3f}"),
+    ]
+    for col, (lbl, val) in zip(cols, metrics):
+        col.metric(lbl, val)
 
     st.markdown(
-        f"<div style='color:{COL_MUTED};margin-top:16px;font-size:13.5px;line-height:1.55;'>"
+        f"<div style='color:{COL_MUTED};margin-top:18px;font-size:13.5px;line-height:1.6;'>"
         f"Trên tập kiểm định: <b>{det['so_ho_bom_that']:,}</b> hố bom thật, mô hình dự "
-        f"báo <b>{det['so_ho_bom_du_bao']:,}</b> hố. Sai lệch giữa hai con số ~"
-        f"{abs(det['so_ho_bom_du_bao'] - det['so_ho_bom_that'])} hố phản ánh biên "
+        f"báo <b>{det['so_ho_bom_du_bao']:,}</b> hố. Sai lệch giữa hai con số "
+        f"({abs(det['so_ho_bom_du_bao'] - det['so_ho_bom_that'])} hố) phản ánh biên "
         f"dương/âm giả trong ngưỡng chấp nhận được của bài toán quy mô rộng."
         f"</div>",
         unsafe_allow_html=True,
@@ -527,8 +903,9 @@ with tab_det:
     fig07 = load_figure("07_anh_ve_tinh_mau.png")
     if fig07 is not None:
         st.markdown(
-            f"<div style='font-size:16px;font-weight:500;color:{COL_INK};"
-            f"letter-spacing:-0.01em;margin:8px 0 6px 0;'>Ví dụ ảnh vệ tinh và hố bom được phát hiện</div>",
+            f"<div style='font-size:17px;font-weight:500;color:{COL_INK};"
+            f"letter-spacing:-0.01em;margin:12px 0 8px 0;'>"
+            f"Ví dụ ảnh vệ tinh và hố bom được phát hiện</div>",
             unsafe_allow_html=True,
         )
         st.image(fig07, use_container_width=True)
@@ -536,13 +913,13 @@ with tab_det:
     fig02 = load_figure("02_ban_do_nguy_co.png")
     if fig02 is not None:
         st.markdown(
-            f"<div style='font-size:16px;font-weight:500;color:{COL_INK};"
-            f"letter-spacing:-0.01em;margin:16px 0 6px 0;'>Bản đồ nguy cơ trên lưới 100 mét</div>",
+            f"<div style='font-size:17px;font-weight:500;color:{COL_INK};"
+            f"letter-spacing:-0.01em;margin:20px 0 8px 0;'>"
+            f"Bản đồ nguy cơ trên lưới 100 mét</div>",
             unsafe_allow_html=True,
         )
         st.image(fig02, use_container_width=True)
 
-    # Cảnh báo tăng hai
     warn = KQ.get("canh_bao_tang_hai", {})
     if warn:
         st.markdown(
@@ -557,22 +934,24 @@ with tab_det:
             unsafe_allow_html=True,
         )
 
+
 # ============================================================================
 # TAB: ĐƯỜNG CONG HIỆU QUẢ
 # ============================================================================
 with tab_curve:
-    st.subheader("Đường cong hiệu quả rà phá theo diện tích ưu tiên")
     st.markdown(
-        f"<div style='color:{COL_MUTED};margin-bottom:14px;font-size:14px;line-height:1.55;'>"
-        f"Trục ngang: tỉ lệ diện tích được rà phá theo thứ tự ưu tiên. Trục dọc: tỉ lệ "
-        f"khối lượng vật nổ đã được thu hồi. Đường thẳng chéo là kịch bản quét đều. "
-        f"Khoảng cách giữa đường cong của mô hình và đường chéo là lợi thế của việc "
-        f"ưu tiên."
-        f"</div>",
+        "<div class='section-title'>Đường cong hiệu quả rà phá</div>",
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        "<div class='section-sub'>"
+        "Trục ngang: tỉ lệ diện tích được rà phá theo thứ tự ưu tiên. Trục dọc: "
+        "tỉ lệ khối lượng vật nổ đã thu hồi. Đường thẳng chéo là kịch bản quét đều. "
+        "Khoảng cách giữa đường cong của mô hình và đường chéo là lợi thế của việc ưu tiên."
+        "</div>",
         unsafe_allow_html=True,
     )
 
-    # Đường cong hiệu quả — dựng từ Priority CSV
     import plotly.graph_objects as go
 
     if not PRIOR.empty:
@@ -583,17 +962,18 @@ with tab_curve:
 
         fig = go.Figure()
         fig.add_trace(go.Scatter(
-            x=area, y=cum, mode="lines",
-            line=dict(color=COL_INK, width=2.5),
-            name="DeMine-VN — hệ thống đầy đủ",
-            hovertemplate="Diện tích: %{x:.1%}<br>Vật nổ thu hồi: %{y:.1%}<extra></extra>",
-        ))
-        fig.add_trace(go.Scatter(
             x=[0, 1], y=[0, 1], mode="lines",
             line=dict(color=COL_MUTED, width=1.5, dash="dot"),
             name="Kịch bản quét đều",
+            hoverinfo="skip",
         ))
-        # Điểm mốc 10/20/50%
+        fig.add_trace(go.Scatter(
+            x=area, y=cum, mode="lines",
+            line=dict(color=COL_INK, width=3),
+            fill="tonexty", fillcolor="rgba(0,113,227,0.08)",
+            name="DeMine-VN — hệ thống đầy đủ",
+            hovertemplate="Diện tích: %{x:.1%}<br>Vật nổ thu hồi: %{y:.1%}<extra></extra>",
+        ))
         for pct, y in [
             (0.10, curve["thu_hoi_tai_10pct_dien_tich"]),
             (0.20, curve["thu_hoi_tai_20pct_dien_tich"]),
@@ -601,47 +981,51 @@ with tab_curve:
         ]:
             fig.add_trace(go.Scatter(
                 x=[pct], y=[y], mode="markers+text",
-                marker=dict(size=10, color=COL_ACCENT, line=dict(color="white", width=2)),
+                marker=dict(size=12, color=COL_ACCENT,
+                            line=dict(color="white", width=2)),
                 text=[f"{y:.0%}"], textposition="top center",
-                textfont=dict(color=COL_INK, size=12),
-                showlegend=False,
-                hoverinfo="skip",
+                textfont=dict(color=COL_INK, size=12,
+                              family="-apple-system"),
+                showlegend=False, hoverinfo="skip",
             ))
 
         fig.update_layout(
-            height=460,
+            height=480,
             plot_bgcolor=COL_CARD, paper_bgcolor=COL_CARD,
             xaxis=dict(title="Tỉ lệ diện tích được rà phá theo thứ tự ưu tiên",
-                        tickformat=".0%", gridcolor=COL_HAIRLINE, linecolor=COL_HAIRLINE,
-                        range=[0, 1]),
+                        tickformat=".0%", gridcolor=COL_HAIRLINE,
+                        linecolor=COL_HAIRLINE, range=[0, 1]),
             yaxis=dict(title="Tỉ lệ khối lượng vật nổ đã thu hồi",
-                        tickformat=".0%", gridcolor=COL_HAIRLINE, linecolor=COL_HAIRLINE,
-                        range=[0, 1.02]),
+                        tickformat=".0%", gridcolor=COL_HAIRLINE,
+                        linecolor=COL_HAIRLINE, range=[0, 1.02]),
             legend=dict(orientation="h", y=1.06, x=0.5, xanchor="center",
-                         bgcolor="rgba(0,0,0,0)", font=dict(color=COL_INK, size=12)),
+                         bgcolor="rgba(0,0,0,0)",
+                         font=dict(color=COL_INK, size=12)),
             font=dict(color=COL_INK, family="-apple-system"),
             margin=dict(l=60, r=30, t=60, b=50),
+            transition=dict(duration=500, easing="cubic-in-out"),
         )
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, use_container_width=True,
+                         config={"displaylogo": False})
 
     st.markdown(
         f'''<div class="kpi-strip">
-        <div class="kpi">
+        <div class="kpi fade-in-up stagger-1">
             <div class="kpi-label">Rà phá 10% diện tích</div>
             <div class="kpi-value">{curve['thu_hoi_tai_10pct_dien_tich']:.1%}</div>
             <div class="kpi-note">vật nổ đã thu hồi</div>
         </div>
-        <div class="kpi">
+        <div class="kpi fade-in-up stagger-2">
             <div class="kpi-label">Rà phá 20% diện tích</div>
             <div class="kpi-value">{curve['thu_hoi_tai_20pct_dien_tich']:.1%}</div>
             <div class="kpi-note">vật nổ đã thu hồi</div>
         </div>
-        <div class="kpi">
+        <div class="kpi fade-in-up stagger-3">
             <div class="kpi-label">Rà phá 50% diện tích</div>
             <div class="kpi-value">{curve['thu_hoi_tai_50pct_dien_tich']:.1%}</div>
             <div class="kpi-note">vật nổ đã thu hồi</div>
         </div>
-        <div class="kpi">
+        <div class="kpi fade-in-up stagger-4">
             <div class="kpi-label">Lợi thế trung bình</div>
             <div class="kpi-value" style="color:{COL_ACCENT}">+{curve['loi_the_so_voi_quet_deu']:.1%}</div>
             <div class="kpi-note">so với phương án quét đều</div>
@@ -650,18 +1034,22 @@ with tab_curve:
         unsafe_allow_html=True,
     )
 
+
 # ============================================================================
-# TAB: KIỂM CHỨNG BỐN TẦNG
+# TAB: KIỂM CHỨNG
 # ============================================================================
 with tab_val:
-    st.subheader("Kiểm chứng độc lập ở bốn tầng")
     st.markdown(
-        f"<div style='color:{COL_MUTED};margin-bottom:14px;font-size:14px;line-height:1.55;'>"
-        f"Bài toán rà phá không có nhãn hoàn hảo. Không thể chờ nhiều năm để biết dự "
-        f"báo có đúng hay không. Vì vậy hệ thống được kiểm chứng bằng bốn tầng chứng "
-        f"cứ độc lập — đối chứng nội bộ, đối chứng lịch sử tai nạn, đối chứng chéo hai "
-        f"nguồn, và kiểm tra tính chuyển vùng địa lý."
-        f"</div>",
+        "<div class='section-title'>Kiểm chứng độc lập ở bốn tầng</div>",
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        "<div class='section-sub'>"
+        "Bài toán rà phá không có nhãn hoàn hảo. Không thể chờ nhiều năm để biết dự "
+        "báo có đúng hay không. Vì vậy hệ thống được kiểm chứng bằng bốn tầng chứng "
+        "cứ độc lập — đối chứng nội bộ, đối chứng lịch sử tai nạn, đối chứng chéo hai "
+        "nguồn, và kiểm tra tính chuyển vùng địa lý."
+        "</div>",
         unsafe_allow_html=True,
     )
 
@@ -675,7 +1063,7 @@ with tab_val:
     with tabs_val[0]:
         t1 = KQ["tang_1_doi_chung_dat_da_ra_pha"]
         st.markdown(
-            f"<div style='color:{COL_MUTED};font-size:14px;line-height:1.55;'>"
+            f"<div style='color:{COL_MUTED};font-size:14px;line-height:1.6;'>"
             f"Chia dữ liệu ngẫu nhiên nhiều lần, huấn luyện trên phần đầu và kiểm tra "
             f"trên phần sau. Đo tỉ lệ thu hồi vật nổ tại 20% diện tích ưu tiên đầu."
             f"</div>",
@@ -683,7 +1071,8 @@ with tab_val:
         )
         c1, c2, c3 = st.columns(3)
         c1.metric("Số lần chia", str(t1["so_lan_chia"]))
-        c2.metric("Thu hồi tại 20% (trung bình)", f"{t1['thu_hoi_tai_20pct_trung_binh']:.1%}")
+        c2.metric("Thu hồi tại 20% (trung bình)",
+                    f"{t1['thu_hoi_tai_20pct_trung_binh']:.1%}")
         c3.metric("Độ lệch chuẩn", f"{t1['do_lech_chuan']:.4f}")
 
     with tabs_val[1]:
@@ -694,10 +1083,8 @@ with tab_val:
                              "Bao phủ 10%", "Bao phủ 20%", "Bao phủ 30%",
                              "Hệ số vượt ngẫu nhiên (20%)"]
             st.markdown(
-                f"<div style='color:{COL_MUTED};font-size:14px;line-height:1.55;margin-bottom:8px;'>"
-                f"Kiểm chứng ngoài bằng hồ sơ tai nạn có thật đã ghi nhận trong quá khứ. "
-                f"Bảng bên dưới cho biết thứ tự ưu tiên của mô hình có bao phủ được các "
-                f"điểm tai nạn thực tế hay không."
+                f"<div style='color:{COL_MUTED};font-size:14px;line-height:1.6;margin-bottom:8px;'>"
+                f"Kiểm chứng ngoài bằng hồ sơ tai nạn có thật đã ghi nhận trong quá khứ."
                 f"</div>",
                 unsafe_allow_html=True,
             )
@@ -711,10 +1098,9 @@ with tab_val:
     with tabs_val[2]:
         t3 = KQ.get("tang_3_nhat_quan_hai_nguon", {})
         st.markdown(
-            f"<div style='color:{COL_MUTED};font-size:14px;line-height:1.55;'>"
+            f"<div style='color:{COL_MUTED};font-size:14px;line-height:1.6;'>"
             f"Số hố bom phát hiện qua ảnh vệ tinh và tải trọng bom trong hồ sơ không "
-            f"kích phải tương quan với nhau — hai nguồn khác nhau, cùng một hiện tượng "
-            f"vật lý. Thiếu tương quan có nghĩa là ít nhất một trong hai nguồn có sai lệch hệ thống."
+            f"kích phải tương quan với nhau — hai nguồn khác nhau, cùng một hiện tượng vật lý."
             f"</div>",
             unsafe_allow_html=True,
         )
@@ -730,10 +1116,8 @@ with tab_val:
         t4a = KQ.get("tang_4a_chuyen_vung_dia_ly", {})
         t4b = KQ.get("tang_4b_hieu_chinh_xac_suat", {})
         st.markdown(
-            f"<div style='color:{COL_MUTED};font-size:14px;line-height:1.55;'>"
-            f"Huấn luyện trên một vùng địa lý và kiểm chứng trên vùng khác chưa từng "
-            f"thấy — kiểm tra xem mô hình có phụ thuộc quá nhiều vào đặc điểm địa "
-            f"phương hay không."
+            f"<div style='color:{COL_MUTED};font-size:14px;line-height:1.6;'>"
+            f"Huấn luyện trên một vùng địa lý và kiểm chứng trên vùng khác chưa từng thấy."
             f"</div>",
             unsafe_allow_html=True,
         )
@@ -742,16 +1126,9 @@ with tab_val:
                     f"{t4a.get('thu_hoi_tai_20pct_cung_vung', 0):.1%}")
         c2.metric("Vùng mới — thu hồi 20%",
                     f"{t4a.get('thu_hoi_tai_20pct_vung_moi', 0):.1%}",
-                    delta=f"{t4a.get('muc_suy_giam_tuong_doi', 0):.1%} so với cùng vùng")
+                    delta=f"{t4a.get('muc_suy_giam_tuong_doi', 0):.1%}")
 
         st.markdown("<br>", unsafe_allow_html=True)
-        st.markdown(
-            f"<div style='color:{COL_MUTED};font-size:14px;line-height:1.55;margin:6px 0 8px 0;'>"
-            f"Hiệu chỉnh xác suất — đo bằng điểm Brier và sai số hiệu chỉnh kỳ vọng. "
-            f"Điểm Brier càng nhỏ, xác suất dự báo càng đáng tin."
-            f"</div>",
-            unsafe_allow_html=True,
-        )
         c1, c2, c3, c4 = st.columns(4)
         c1.metric("Điểm Brier", f"{t4b.get('diem_brier', 0):.4f}")
         c2.metric("Sai số hiệu chỉnh", f"{t4b.get('sai_so_hieu_chinh_ky_vong', 0):.4f}")
@@ -762,81 +1139,61 @@ with tab_val:
     if fig04 is not None:
         st.markdown("<br>", unsafe_allow_html=True)
         st.markdown(
-            f"<div style='font-size:16px;font-weight:500;color:{COL_INK};"
+            f"<div style='font-size:17px;font-weight:500;color:{COL_INK};"
             f"letter-spacing:-0.01em;margin:8px 0 6px 0;'>Biểu đồ hiệu chỉnh</div>",
             unsafe_allow_html=True,
         )
         st.image(fig04, use_container_width=True)
 
+
 # ============================================================================
 # TAB: NGUỒN DỮ LIỆU
 # ============================================================================
 with tab_data:
-    st.subheader("Ba nguồn dữ liệu và cách hợp nhất")
     st.markdown(
-        f"<div style='color:{COL_MUTED};margin-bottom:14px;font-size:14px;line-height:1.55;max-width:820px;'>"
-        f"Hệ thống hợp nhất ba nguồn chứng cứ độc lập. Không có nguồn nào là hoàn hảo. "
-        f"Sức mạnh của mô hình nằm ở sự bổ sung: điểm yếu của nguồn này được nguồn khác che phủ."
-        f"</div>",
+        "<div class='section-title'>Nguồn dữ liệu — công khai và tham chiếu</div>",
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        "<div class='section-sub'>"
+        "Hệ thống hợp nhất ba nguồn chứng cứ độc lập. Không có nguồn nào là hoàn hảo. "
+        "Sức mạnh của mô hình nằm ở sự bổ sung."
+        "</div>",
         unsafe_allow_html=True,
     )
 
     c1, c2, c3 = st.columns(3)
-    with c1:
-        st.markdown(
-            f"""<div class='callout'>
-            <div class='callout-title'>1. Hồ sơ không kích giải mật</div>
-            <div class='callout-body'>
-            Nguồn tham chiếu: bộ dữ liệu THOR (Theater History of Operations Reports)
-            do Bộ Quốc phòng Hoa Kỳ giải mật, ghi chép hơn 4 triệu phi vụ chiến tranh
-            Việt Nam.<br><br>
-            <b>Điểm mạnh.</b> Bao phủ toàn quốc, có toạ độ mục tiêu và tải trọng.<br>
-            <b>Điểm yếu.</b> Sai số định vị lịch sử ~180 m; ~8% phi vụ mất hồ sơ.
-            </div></div>""",
-            unsafe_allow_html=True,
-        )
-    with c2:
-        st.markdown(
-            f"""<div class='callout'>
-            <div class='callout-title'>2. Ảnh vệ tinh lịch sử</div>
-            <div class='callout-body'>
-            Ảnh vệ tinh độ phân giải trung bình cho phép phát hiện hố bom cũ vẫn còn
-            lộ trên mặt đất — mỗi hố tương ứng ít nhất một quả bom đã nổ.<br><br>
-            <b>Điểm mạnh.</b> Bằng chứng vật lý trực tiếp, độc lập với hồ sơ.<br>
-            <b>Điểm yếu.</b> Trên nền đất mềm, hố bị bồi lấp; hố cũng có thể bị che khuất
-            bởi thực vật.
-            </div></div>""",
-            unsafe_allow_html=True,
-        )
-    with c3:
-        st.markdown(
-            f"""<div class='callout'>
-            <div class='callout-title'>3. Dữ liệu rà phá thực địa</div>
-            <div class='callout-body'>
-            Bản ghi các khoảnh đã được đội rà phá quét sạch trong quá khứ — thông tin
-            có tính xác thực cao nhất vì đến từ máy dò thực tế.<br><br>
-            <b>Điểm mạnh.</b> Nhãn ground-truth cho hiệu chỉnh mô hình.<br>
-            <b>Điểm yếu.</b> Chỉ bao phủ một phần diện tích; không phân bố đồng đều.
-            </div></div>""",
-            unsafe_allow_html=True,
-        )
+    for col, cls, title, body in [
+        (c1, "stagger-1", "Hồ sơ không kích giải mật",
+         "Bộ dữ liệu THOR (Theater History of Operations Reports) do Bộ Quốc phòng "
+         "Hoa Kỳ giải mật, ghi chép hơn 4 triệu phi vụ chiến tranh Việt Nam. "
+         "<b>Điểm mạnh.</b> Bao phủ toàn quốc, có toạ độ mục tiêu và tải trọng. "
+         "<b>Điểm yếu.</b> Sai số định vị lịch sử ~180 m; ~8% phi vụ mất hồ sơ."),
+        (c2, "stagger-2", "Ảnh vệ tinh lịch sử",
+         "Ảnh vệ tinh độ phân giải trung bình cho phép phát hiện hố bom cũ vẫn còn "
+         "lộ trên mặt đất. <b>Điểm mạnh.</b> Bằng chứng vật lý trực tiếp, độc lập "
+         "với hồ sơ. <b>Điểm yếu.</b> Trên nền đất mềm, hố bị bồi lấp; hố cũng có "
+         "thể bị che khuất bởi thực vật."),
+        (c3, "stagger-3", "Dữ liệu rà phá thực địa",
+         "Bản ghi các khoảnh đã được đội rà phá quét sạch trong quá khứ — thông tin "
+         "có tính xác thực cao nhất vì đến từ máy dò thực tế. <b>Điểm mạnh.</b> "
+         "Nhãn ground-truth cho hiệu chỉnh mô hình. <b>Điểm yếu.</b> Chỉ bao phủ "
+         "một phần diện tích."),
+    ]:
+        with col:
+            st.markdown(
+                f"<div class='callout fade-in-up {cls}'>"
+                f"<div class='callout-title'>{title}</div>"
+                f"<div class='callout-body'>{body}</div></div>",
+                unsafe_allow_html=True,
+            )
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    fig03 = load_figure("03_ba_nguon_du_lieu.png")
-    if fig03 is not None:
-        st.markdown(
-            f"<div style='font-size:16px;font-weight:500;color:{COL_INK};"
-            f"letter-spacing:-0.01em;margin:8px 0 6px 0;'>Ba lớp dữ liệu chồng lên nhau trên cùng lưới 100 mét</div>",
-            unsafe_allow_html=True,
-        )
-        st.image(fig03, use_container_width=True)
-
-    # Ablation
     st.markdown(
-        f"<div style='font-size:20px;font-weight:500;color:{COL_INK};"
-        f"letter-spacing:-0.02em;margin:24px 0 12px 0;'>"
-        f"Đóng góp riêng của từng nguồn — nghiên cứu ablation</div>",
+        "<div style='font-size:20px;font-weight:500;color:#1D1D1F;"
+        "letter-spacing:-0.02em;margin:16px 0 12px 0;'>"
+        "Đóng góp riêng của từng nguồn — nghiên cứu ablation</div>",
         unsafe_allow_html=True,
     )
     abl = KQ.get("phan_tich_dong_gop_thanh_phan", [])
@@ -852,38 +1209,46 @@ with tab_data:
         }), use_container_width=True, hide_index=True)
 
     st.markdown(
-        f"""<div class='callout' style='margin-top:16px;'>
-        <div class='callout-title'>Bộ dữ liệu tham chiếu công khai</div>
+        f"""<div class='callout' style='margin-top:20px;'>
+        <div class='callout-title'>Bộ dữ liệu công khai tham chiếu</div>
         <div class='callout-body'>
-        Mã nguồn được thiết kế để làm việc với dữ liệu thật khi được cung cấp.
-        Các bộ dữ liệu mở tham chiếu:<br><br>
         <b>THOR — Theater History of Operations Reports.</b> Hồ sơ giải mật của Bộ
         Quốc phòng Hoa Kỳ về các phi vụ ném bom giai đoạn 1965–1975. Có thể tải
-        về từ data.mil hoặc catalog.data.gov.<br><br>
+        về từ <code>data.mil</code> hoặc <code>catalog.data.gov</code>.<br><br>
         <b>Landmine and Cluster Munition Monitor — Vietnam Country Profile.</b>
-        Số liệu tai nạn cập nhật hằng năm, do The Monitor công bố.<br><br>
+        Số liệu tai nạn cập nhật hằng năm, do The Monitor công bố tại
+        <code>the-monitor.org</code>.<br><br>
         <b>VNMAC.</b> Báo cáo thường niên của Trung tâm Hành động bom mìn Quốc gia
-        Việt Nam về tình trạng ô nhiễm cấp tỉnh và tiến độ khắc phục.
+        Việt Nam về tình trạng ô nhiễm cấp tỉnh và tiến độ khắc phục.<br><br>
+        <b>OpenStreetMap và GADM.</b> Biên giới hành chính 63 tỉnh, thành phố dùng
+        cho bản đồ giám sát.
         </div></div>""",
         unsafe_allow_html=True,
     )
+
 
 # ============================================================================
 # TAB: CHỈ TIÊU TỔNG HỢP
 # ============================================================================
 with tab_kpi:
-    st.subheader("Chỉ tiêu tổng hợp bản chạy hiện tại")
+    st.markdown(
+        "<div class='section-title'>Chỉ tiêu tổng hợp bản chạy hiện tại</div>",
+        unsafe_allow_html=True,
+    )
 
-    inner = st.tabs(["Đặc trưng đóng góp lớn nhất",
-                       "Đóng góp theo hoán vị",
-                       "Môi trường chạy"])
+    inner = st.tabs([
+        "Đặc trưng đóng góp lớn nhất",
+        "Đóng góp theo hoán vị",
+        "Môi trường chạy",
+    ])
 
     with inner[0]:
         feats = KQ.get("muc_dong_gop_dac_trung", {})
         if feats:
             df = pd.DataFrame([{"Đặc trưng": k, "Trọng số": v}
                                  for k, v in list(feats.items())[:15]])
-            st.dataframe(df.style.format({"Trọng số": "{:.4f}"}),
+            st.dataframe(df.style.format({"Trọng số": "{:.4f}"})
+                              .background_gradient(subset=["Trọng số"], cmap="Blues"),
                           use_container_width=True, hide_index=True)
 
     with inner[1]:
@@ -891,7 +1256,8 @@ with tab_kpi:
         if perm:
             df = pd.DataFrame([{"Đặc trưng": k, "Mức đóng góp": v}
                                  for k, v in list(perm.items())[:15]])
-            st.dataframe(df.style.format({"Mức đóng góp": "{:.4f}"}),
+            st.dataframe(df.style.format({"Mức đóng góp": "{:.4f}"})
+                              .background_gradient(subset=["Mức đóng góp"], cmap="Purples"),
                           use_container_width=True, hide_index=True)
 
     with inner[2]:
@@ -911,15 +1277,16 @@ with tab_kpi:
         if fig06 is not None:
             with cc2: st.image(fig06, use_container_width=True)
 
+
 # ============================================================================
 # FOOTER
 # ============================================================================
 st.markdown(
-    f"<div style='height:1px;background:{COL_HAIRLINE};margin:32px 0 12px 0;'></div>",
+    f"<div style='height:1px;background:{COL_HAIRLINE};margin:40px 0 12px 0;'></div>",
     unsafe_allow_html=True,
 )
 st.markdown(
-    f"<div style='color:{COL_MUTED};font-size:12px;text-align:center;padding:16px 0;line-height:1.6;'>"
+    f"<div style='color:{COL_MUTED};font-size:12px;text-align:center;padding:16px 0;line-height:1.7;'>"
     f"DeMine-VN · Hệ thống hỗ trợ xếp thứ tự ưu tiên rà phá bom mìn<br>"
     f"Kết quả mô hình mang tính hỗ trợ nghiệp vụ. Không thay thế quy trình rà phá kỹ thuật."
     f"</div>",

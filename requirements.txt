@@ -1,6 +1,4 @@
 # DeMine-VN — Thư viện tối thiểu để chạy bản trình diễn Streamlit
-# (huấn luyện lại mô hình dùng requirements-full.txt)
-
 streamlit>=1.30
 numpy>=1.23
 scipy>=1.9

@@ -32,10 +32,6 @@ run*.log
 *.onnx
 
 # Large training data — kept locally
-data/imagery/images/train/
-data/imagery/images/val/
-data/imagery/labels/train/
-data/imagery/labels/val/
 outputs/runs/
 
 # Competition-specific artefacts — kept locally, not published
@@ -46,3 +42,10 @@ scripts/build_notebook.py
 
 # OS
 Thumbs.db
+
+# Large training data
+data/imagery/images/train/
+data/imagery/images/val/
+data/imagery/labels/train/
+data/imagery/labels/val/
+outputs/runs/
