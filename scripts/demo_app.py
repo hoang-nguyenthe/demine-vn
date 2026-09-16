@@ -590,7 +590,7 @@ with tab_national:
             "ma_vung": "first",
         })
 
-        fig = px.choropleth_mapbox(
+        fig = px.choropleth_map(
             df,
             geojson=GEO_VN,
             locations="tinh",
@@ -603,7 +603,7 @@ with tab_national:
                 (0.75, "#D26B36"),
                 (1.0,  "#B62A2A"),
             ],
-            mapbox_style="carto-positron",
+            map_style="carto-positron",
             center={"lat": 15.9, "lon": 107.6},
             zoom=4.6,
             opacity=0.85,
