@@ -596,7 +596,7 @@ with tab_national:
         vals = df[metric_col].astype(float)
         vmin, vmax = float(vals.min()), float(vals.max())
         colormap = cm.LinearColormap(
-            colors=["#EFF8F7", "#7A9E5F", "#D4A017", "#D26B36", "#B62A2A"],
+            colors=["#FFE9A0", "#F9B84E", "#E67632", "#B62A2A", "#7A1717"],
             vmin=vmin, vmax=vmax, caption=metric_label,
         )
 
@@ -615,18 +615,19 @@ with tab_national:
             feat["properties"]["ky_tai_thu_hoi"] = f"{int(r.get('ky_tai_thu_hoi_tan_2015_2023', 0)):,} tấn" if r else "—"
 
         m = folium.Map(
-            location=[15.9, 107.6], zoom_start=6,
+            location=[16.5, 107.5], zoom_start=6,
             tiles="OpenStreetMap", control_scale=True,
             min_zoom=5, max_zoom=10,
         )
+        m.fit_bounds([[8.0, 102.5], [23.5, 115.0]])
 
         def _style(feature):
             v = feature["properties"].get("metric_val")
             if v is None:
                 return {"fillColor": "#DDDDDD", "color": "#FFFFFF",
                          "weight": 0.6, "fillOpacity": 0.4}
-            return {"fillColor": colormap(v), "color": "#FFFFFF",
-                     "weight": 0.8, "fillOpacity": 0.82}
+            return {"fillColor": colormap(v), "color": "#1D1D1F",
+                     "weight": 0.8, "fillOpacity": 0.78}
 
         def _highlight(feature):
             return {"weight": 2.5, "color": "#1D1D1F", "fillOpacity": 0.92}
