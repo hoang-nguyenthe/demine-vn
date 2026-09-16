@@ -3,11 +3,11 @@ Quảng Trị,BTB,470100,382900,81.4,412,712,4820,Tỉnh ô nhiễm nặng nhấ
 Quảng Bình,BTB,806500,536600,66.5,238,398,3120,Trọng điểm ném bom tuyến vận tải chiến lược
 Thừa Thiên Huế,BTB,502120,342400,68.2,196,342,2680,Vùng A Sầu — A Lưới ô nhiễm đặc biệt nặng
 Hà Tĩnh,BTB,599000,287000,47.9,164,278,1980,Cửa ngõ vào tuyến vận tải phía Nam
-Nghệ An,BTB,1649000,624000,37.8,182,296,2100,Diện tích rộng, ô nhiễm cục bộ tại miền tây
+Nghệ An,BTB,1649000,624000,37.8,182,296,2100,"Diện tích rộng, ô nhiễm cục bộ tại miền tây"
 Thanh Hoá,BTB,1113000,391000,35.1,148,228,1520,Ô nhiễm chủ yếu ở khu vực Sầm Sơn và tuyến quốc lộ
 Quảng Nam,NTB,1057500,556700,52.6,168,290,2340,Vùng núi ven biên giới có mật độ cao
-Quảng Ngãi,NTB,515700,305000,59.1,152,262,2020,Vùng Ba Tơ, Trà Bồng ô nhiễm nặng
-Bình Định,NTB,606000,238400,39.3,124,206,1580,Ô nhiễm trung bình, tập trung miền tây tỉnh
+Quảng Ngãi,NTB,515700,305000,59.1,152,262,2020,"Vùng Ba Tơ, Trà Bồng ô nhiễm nặng"
+Bình Định,NTB,606000,238400,39.3,124,206,1580,"Ô nhiễm trung bình, tập trung miền tây tỉnh"
 Phú Yên,NTB,506100,182200,36.0,88,142,1120,Ô nhiễm ven biển và miền núi
 Khánh Hoà,NTB,516000,145600,28.2,72,118,860,Ô nhiễm cục bộ tại Ninh Hoà và Cam Ranh
 Ninh Thuận,NTB,335500,68000,20.3,48,72,520,Ô nhiễm thấp hơn trung bình khu vực
@@ -16,16 +16,16 @@ Kon Tum,TN,967000,478100,49.4,106,182,1420,Tuyến biên giới ba nước ô nh
 Gia Lai,TN,1553800,548700,35.3,124,208,1580,Ô nhiễm dọc quốc lộ 14 và 19
 Đắk Lắk,TN,1303100,420800,32.3,102,168,1240,Vùng Buôn Hồ và biên giới Campuchia
 Đắk Nông,TN,650100,214600,33.0,64,102,780,Vùng biên giới Bù Đăng ô nhiễm cao
-Lâm Đồng,TN,977500,192900,19.7,56,88,620,Ô nhiễm cục bộ, chủ yếu ở phía nam
-Kiên Giang,TNB,634700,68400,10.8,36,54,340,Ô nhiễm thấp, tập trung tuyến biên giới
+Lâm Đồng,TN,977500,192900,19.7,56,88,620,"Ô nhiễm cục bộ, chủ yếu ở phía nam"
+Kiên Giang,TNB,634700,68400,10.8,36,54,340,"Ô nhiễm thấp, tập trung tuyến biên giới"
 Long An,TNB,449300,85800,19.1,42,68,480,Vùng Đồng Tháp Mười và tuyến biên giới
 Đồng Tháp,TNB,338300,52800,15.6,34,54,320,Ô nhiễm cục bộ ven biên giới Campuchia
 Tây Ninh,ĐNB,440300,178300,40.5,72,112,860,Vùng biên giới ô nhiễm nặng
 Bình Phước,ĐNB,687400,278900,40.6,68,108,820,Tuyến ranh giới với Campuchia
-Bình Dương,ĐNB,269400,63200,23.5,32,48,280,Ô nhiễm cục bộ tại Bến Cát, Dầu Tiếng
-Đồng Nai,ĐNB,586200,142400,24.3,48,74,420,Vùng Định Quán, Tân Phú ô nhiễm cao
+Bình Dương,ĐNB,269400,63200,23.5,32,48,280,"Ô nhiễm cục bộ tại Bến Cát, Dầu Tiếng"
+Đồng Nai,ĐNB,586200,142400,24.3,48,74,420,"Vùng Định Quán, Tân Phú ô nhiễm cao"
 Bà Rịa - Vũng Tàu,ĐNB,197500,32100,16.3,22,36,180,Ô nhiễm cục bộ tại Xuyên Mộc
-An Giang,TNB,353300,46200,13.1,26,42,220,Ô nhiễm nhẹ, chủ yếu Tri Tôn, Tịnh Biên
+An Giang,TNB,353300,46200,13.1,26,42,220,"Ô nhiễm nhẹ, chủ yếu Tri Tôn, Tịnh Biên"
 Cà Mau,TNB,522100,42300,8.1,18,28,140,Ô nhiễm thấp nhất khu vực
 Bến Tre,TNB,236100,28400,12.0,16,24,120,Ô nhiễm cục bộ
 Trà Vinh,TNB,235800,28900,12.3,14,22,110,Ô nhiễm cục bộ
