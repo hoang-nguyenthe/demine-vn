@@ -1,0 +1,29 @@
+# DeMine-VN — phụ thuộc
+#
+# Trên Kaggle, hầu hết các gói dưới đây đã có sẵn trong ảnh Python. Notebook tự
+# kiểm tra và chỉ cài những gì còn thiếu, nên không cần chạy tệp này bằng tay.
+#
+# Hệ thống được thiết kế để chạy được cả khi notebook ở chế độ ngắt mạng: khi đó
+# tầng phát hiện tự chuyển sang phương án Torchvision, vốn luôn có sẵn.
+
+# --- Bắt buộc ---------------------------------------------------------
+numpy>=1.24
+scipy>=1.10
+pandas>=2.0
+scikit-learn>=1.3
+matplotlib>=3.7
+pillow>=10.0
+
+# --- Học sâu (có sẵn trên Kaggle) -------------------------------------
+torch>=2.0
+torchvision>=0.15
+
+# --- Tuỳ chọn: nâng chất lượng nhưng không bắt buộc -------------------
+# Phương án phát hiện chính, khai thác được cả hai GPU T4.
+ultralytics>=8.3.0
+
+# Bộ học cho tầng nguy cơ; nếu thiếu, hệ thống tự lùi về scikit-learn.
+xgboost>=2.0
+
+# Bản đồ tương tác; nếu thiếu, hệ thống tự dựng bản đồ bằng canvas.
+folium>=0.15

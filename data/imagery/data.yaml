@@ -1,0 +1,6 @@
+path: /Users/nguyenthehoang/projects/demine-vn/data/imagery
+train: images/train
+val: images/val
+test: images/test
+names:
+  0: ho_bom

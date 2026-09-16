@@ -1,0 +1,48 @@
+# Byte-compiled
+__pycache__/
+*.py[cod]
+*.so
+
+# Virtual environments
+venv/
+env/
+.venv/
+
+# Distribution
+build/
+dist/
+*.egg-info/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# Logs and local artefacts
+*.log
+run*.log
+
+# Streamlit
+.streamlit/secrets.toml
+
+# Model weights (large)
+*.pt
+*.pth
+*.onnx
+
+# Large training data — kept locally
+data/imagery/images/train/
+data/imagery/images/val/
+data/imagery/labels/train/
+data/imagery/labels/val/
+outputs/runs/
+
+# Competition-specific artefacts — kept locally, not published
+KE_KHAI_CONG_CU_AI.md
+docs/PROMPT_LOG.md
+scripts/promptlog.py
+scripts/build_notebook.py
+
+# OS
+Thumbs.db

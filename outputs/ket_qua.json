@@ -1,0 +1,139 @@
+{
+  "tang_hai_phat_hien_ho_bom": {
+    "precision": 0.9807,
+    "recall": 0.9873,
+    "f1": 0.984,
+    "mAP@0.5": 0.9871,
+    "mAP@0.5:0.95": 0.7653,
+    "so_ho_bom_that": 1340,
+    "so_ho_bom_du_bao": 1349
+  },
+  "canh_bao_tang_hai": {
+    "so_ho_bom_phat_hien_toan_vung": 7462,
+    "ty_le_dien_tich_co_anh_ve_tinh": 0.5333,
+    "huan_luyen_chua_du": false
+  },
+  "tang_1_doi_chung_dat_da_ra_pha": {
+    "so_lan_chia": 4,
+    "thu_hoi_tai_20pct_trung_binh": 0.2601,
+    "do_lech_chuan": 0.0355,
+    "loi_the_so_voi_quet_deu": 0.1674
+  },
+  "duong_cong_hieu_qua_ra_pha": {
+    "thu_hoi_tai_10pct_dien_tich": 0.3798,
+    "thu_hoi_tai_20pct_dien_tich": 0.4992,
+    "thu_hoi_tai_50pct_dien_tich": 0.8258,
+    "loi_the_so_voi_quet_deu": 0.4782
+  },
+  "tang_2_doi_chung_ho_so_tai_nan": [
+    {
+      "tap_kiem_chung": "toàn bộ",
+      "so_vu_tai_nan": 231,
+      "bao_phu_tai_10pct": 0.1472,
+      "bao_phu_tai_20pct": 0.3766,
+      "bao_phu_tai_30pct": 0.619,
+      "he_so_vuot_ngau_nhien_tai_20pct": 1.883
+    },
+    {
+      "tap_kiem_chung": "sau năm thứ 17",
+      "so_vu_tai_nan": 61,
+      "bao_phu_tai_10pct": 0.1639,
+      "bao_phu_tai_20pct": 0.3279,
+      "bao_phu_tai_30pct": 0.6393,
+      "he_so_vuot_ngau_nhien_tai_20pct": 1.639
+    }
+  ],
+  "tang_3_nhat_quan_hai_nguon": {
+    "spearman_ho_bom_vs_tai_trong": 0.3261,
+    "so_o_duoc_so_sanh": 19438,
+    "uoc_luong_vat_no_tu_ho_so": 1920.3,
+    "ky_vong_vat_no_tu_mo_hinh": 1415.8,
+    "ty_so_bac_do_lon": 0.737
+  },
+  "tang_4a_chuyen_vung_dia_ly": {
+    "thu_hoi_tai_20pct_cung_vung": 0.2601,
+    "thu_hoi_tai_20pct_vung_moi": 0.2708,
+    "muc_suy_giam_tuong_doi": -0.0413
+  },
+  "tang_4b_hieu_chinh_xac_suat": {
+    "sai_so_hieu_chinh_ky_vong": 0.0275,
+    "diem_brier": 0.0432,
+    "ty_le_duong_thuc_te": 0.1674,
+    "xac_suat_du_bao_trung_binh": 0.1476
+  },
+  "phan_tich_dong_gop_thanh_phan": [
+    {
+      "cau_hinh": "A — chỉ hồ sơ không kích",
+      "so_dac_trung": 4,
+      "thu_hoi_tai_20pct": 0.4421,
+      "loi_the_so_voi_quet_deu": 0.4039,
+      "bao_phu_tai_nan_tai_20pct": 0.3485
+    },
+    {
+      "cau_hinh": "B — chỉ hố bom từ ảnh vệ tinh",
+      "so_dac_trung": 4,
+      "thu_hoi_tai_20pct": 0.3665,
+      "loi_the_so_voi_quet_deu": 0.275,
+      "bao_phu_tai_nan_tai_20pct": 0.3636
+    },
+    {
+      "cau_hinh": "C — hợp nhất hai nguồn, không địa hình",
+      "so_dac_trung": 8,
+      "thu_hoi_tai_20pct": 0.4467,
+      "loi_the_so_voi_quet_deu": 0.4281,
+      "bao_phu_tai_nan_tai_20pct": 0.3788
+    },
+    {
+      "cau_hinh": "D — hệ thống đầy đủ",
+      "so_dac_trung": 17,
+      "thu_hoi_tai_20pct": 0.4868,
+      "loi_the_so_voi_quet_deu": 0.4703,
+      "bao_phu_tai_nan_tai_20pct": 0.3333
+    }
+  ],
+  "muc_dong_gop_dac_trung": {
+    "la_dat_canh_tac": 0.1278,
+    "la_rung": 0.0792,
+    "ky_vong_bom_khong_no": 0.0726,
+    "mat_do_phi_vu_lan_toa": 0.0663,
+    "tai_trong_ghi_nhan_lan_toa": 0.0601,
+    "tai_trong_lan_can_500m": 0.0575,
+    "ho_bom_lan_can_300m": 0.0536,
+    "muc_do_phoi_nhiem": 0.0536,
+    "khoang_cach_lang": 0.0519,
+    "do_cao": 0.0504,
+    "do_mem_nen_dat": 0.0484,
+    "ho_bom_mat_do": 0.0483,
+    "ho_bom_hieu_chinh_tam_nhin": 0.0479,
+    "khoang_cach_duong": 0.0475,
+    "ho_bom_duong_kinh_tb": 0.0466,
+    "do_doc": 0.045,
+    "khoang_cach_song": 0.0432
+  },
+  "muc_dong_gop_theo_hoan_vi": {
+    "tai_trong_ghi_nhan_lan_toa": 0.0501,
+    "ky_vong_bom_khong_no": 0.0401,
+    "muc_do_phoi_nhiem": 0.0178,
+    "tai_trong_lan_can_500m": 0.016,
+    "khoang_cach_duong": 0.0141,
+    "do_doc": 0.0114,
+    "ho_bom_hieu_chinh_tam_nhin": 0.0059,
+    "ho_bom_lan_can_300m": 0.003,
+    "do_mem_nen_dat": 0.0023,
+    "khoang_cach_song": 0.0005,
+    "la_dat_canh_tac": 0.0,
+    "la_rung": -0.0002,
+    "ho_bom_mat_do": -0.0009,
+    "mat_do_phi_vu_lan_toa": -0.0023,
+    "ho_bom_duong_kinh_tb": -0.0032,
+    "do_cao": -0.0046,
+    "khoang_cach_lang": -0.0119
+  },
+  "moi_truong_chay": {
+    "python": "3.13.1",
+    "numpy": "2.2.6",
+    "torch": "2.13.0",
+    "cuda_available": false,
+    "gpu_count": 0
+  }
+}
