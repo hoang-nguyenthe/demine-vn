@@ -564,7 +564,10 @@ with tab_national:
     if GEO_VN is None or UXO_PROV.empty:
         st.info("Chưa có dữ liệu bản đồ toàn quốc.")
     else:
-        import plotly.express as px
+        import folium
+        from folium.features import GeoJsonTooltip
+        import branca.colormap as cm
+        from streamlit.components.v1 import html as st_html
 
         metric_choice = st.selectbox(
             "Chỉ số hiển thị",
@@ -579,7 +582,6 @@ with tab_national:
         )
         metric_col, metric_label = metric_choice
 
-        # Aggregate to unique province (in case of dupes)
         df = UXO_PROV.groupby("tinh", as_index=False).agg({
             "dien_tich_tinh_ha": "first",
             "dien_tich_o_nhiem_ha": "max",
@@ -590,46 +592,72 @@ with tab_national:
             "ma_vung": "first",
         })
 
-        fig = px.choropleth_map(
-            df,
-            geojson=GEO_VN,
-            locations="tinh",
-            featureidkey="properties.ten_tinh",
-            color=metric_col,
-            color_continuous_scale=[
-                (0.0,  "#EFF8F7"),
-                (0.25, "#7A9E5F"),
-                (0.5,  "#D4A017"),
-                (0.75, "#D26B36"),
-                (1.0,  "#B62A2A"),
-            ],
-            map_style="carto-positron",
-            center={"lat": 15.9, "lon": 107.6},
-            zoom=4.6,
-            opacity=0.85,
-            labels={metric_col: metric_label},
-            hover_data={
-                "tinh": True,
-                "ty_le_o_nhiem_pct": ":.1f",
-                "dien_tich_o_nhiem_ha": ":,",
-                "so_vu_tai_nan_2010_2022": True,
-                "so_nan_nhan_2010_2022": True,
-                "ky_tai_thu_hoi_tan_2015_2023": ":,",
-            },
+        # Prepare color scale
+        vals = df[metric_col].astype(float)
+        vmin, vmax = float(vals.min()), float(vals.max())
+        colormap = cm.LinearColormap(
+            colors=["#EFF8F7", "#7A9E5F", "#D4A017", "#D26B36", "#B62A2A"],
+            vmin=vmin, vmax=vmax, caption=metric_label,
         )
-        fig.update_layout(
-            height=680,
-            margin=dict(l=0, r=0, t=0, b=0),
-            paper_bgcolor=COL_CARD,
-            font=dict(family="-apple-system, BlinkMacSystemFont, Inter",
-                       color=COL_INK, size=13),
-            coloraxis_colorbar=dict(
-                title=dict(text=metric_label, font=dict(size=12, color=COL_INK)),
-                thickness=14, len=0.7, x=1.0,
-                bgcolor="rgba(255,255,255,0.9)",
+
+        # Enrich geojson features with data attributes
+        geo_enriched = json.loads(json.dumps(GEO_VN))  # deep copy
+        val_by_tinh = dict(zip(df["tinh"], df[metric_col]))
+        row_by_tinh = df.set_index("tinh").to_dict("index")
+        for feat in geo_enriched["features"]:
+            name = feat["properties"].get("ten_tinh")
+            v = val_by_tinh.get(name)
+            feat["properties"]["metric_val"] = v
+            r = row_by_tinh.get(name, {})
+            feat["properties"]["ty_le_pct"] = f"{r.get('ty_le_o_nhiem_pct', 0):.1f}%" if r else "—"
+            feat["properties"]["dien_tich_o_nhiem"] = f"{int(r.get('dien_tich_o_nhiem_ha', 0)):,} ha" if r else "—"
+            feat["properties"]["so_nan_nhan"] = f"{int(r.get('so_nan_nhan_2010_2022', 0)):,}" if r else "—"
+            feat["properties"]["ky_tai_thu_hoi"] = f"{int(r.get('ky_tai_thu_hoi_tan_2015_2023', 0)):,} tấn" if r else "—"
+
+        m = folium.Map(
+            location=[15.9, 107.6], zoom_start=6,
+            tiles="cartodbpositron", control_scale=True,
+            min_zoom=5, max_zoom=10,
+        )
+
+        def _style(feature):
+            v = feature["properties"].get("metric_val")
+            if v is None:
+                return {"fillColor": "#DDDDDD", "color": "#FFFFFF",
+                         "weight": 0.6, "fillOpacity": 0.4}
+            return {"fillColor": colormap(v), "color": "#FFFFFF",
+                     "weight": 0.8, "fillOpacity": 0.82}
+
+        def _highlight(feature):
+            return {"weight": 2.5, "color": "#1D1D1F", "fillOpacity": 0.92}
+
+        gj = folium.GeoJson(
+            geo_enriched,
+            style_function=_style,
+            highlight_function=_highlight,
+            tooltip=GeoJsonTooltip(
+                fields=["ten_tinh", "ty_le_pct", "dien_tich_o_nhiem",
+                        "so_nan_nhan", "ky_tai_thu_hoi"],
+                aliases=["Tỉnh", "Tỉ lệ ô nhiễm", "Diện tích ô nhiễm",
+                          "Nạn nhân 2010–2022", "Vật nổ thu hồi"],
+                sticky=True,
+                labels=True,
+                localize=True,
+                style=(
+                    "background:rgba(255,255,255,0.96);"
+                    "backdrop-filter:blur(12px);"
+                    "border:1px solid #E5E5EA;border-radius:10px;"
+                    "padding:10px 12px;"
+                    "font-family:-apple-system,BlinkMacSystemFont,sans-serif;"
+                    "font-size:12.5px;color:#1D1D1F;"
+                    "box-shadow:0 4px 16px rgba(0,0,0,0.08);"
+                ),
             ),
         )
-        st.plotly_chart(fig, use_container_width=True, config={"displaylogo": False})
+        gj.add_to(m)
+        colormap.add_to(m)
+
+        st_html(m.get_root().render(), height=680)
 
         # KPI strip below map
         top5 = df.nlargest(5, metric_col)
